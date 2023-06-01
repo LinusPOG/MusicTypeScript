@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  password String
+  name String @unique
+  token String @unique
+  isAdmin Boolean?
+  playing Int?
+  state String?
+  songs Song[]
+  playlists Playlist[]
+}
+
+model Song {
+  id Int @id @default(autoincrement())
+  users User[]
+  name String
+  description String
+  plays Int @default(0)
+  likes Int @default(0)
+  playlists Playlist[]
+  genres Genre[]
+}
+
+model Playlist {
+  id Int @id @default(autoincrement())
+  users User[]
+  name String
+  description String
+  plays Int @default(0)
+  likes Int @default(0)
+  songs Song[]
+  genres Genre[]
+}
+
+model ScriptedPlaylist {
+  id Int @id @default(autoincrement())
+  name String @unique
+}
+
+model Genre {
+  id Int @id @default(autoincrement())
+  name String @unique
+  description String
+  plays Int @default(0)
+  songs Song[]
+  playlists Playlist[]
+}
