@@ -44,13 +44,10 @@
 
     let playlistCreate = false
     let playlistForm: HTMLFormElement
-    let particles: {x: number, y: number, sx: number, sy: number, ex: number, ey: number, rotation: number, time: number, t: number, p: number, r: number}[] = []
-
-    let canvas: HTMLCanvasElement
-    let innerWidth = 0, innerHeight = 0
 
     $:console.log(currSong ,"adsaddsa", currSong?.users)
     
+    // TIME TO HHMMSS format \\
     function toHHMMSS(str: string) {
         let sec_num = parseInt(str, 10); // don't forget the second param
         if (Number.isNaN(sec_num)){
@@ -235,7 +232,6 @@
             return
         }
 
-        const ctx = canvas.getContext("2d")
         // LOADS LAST STATE IF IT EXISTS, LOADS STUFF SUCH AS WHAT SONGS WERE PLAYING \\
         fetch("/state").then(async res => {
             try {
@@ -314,131 +310,9 @@
             document.location.href = "/songs"
         }
 
-        type points = {x: typeof Spring.prototype, y: typeof Spring.prototype, r:number}[]
-        let blobs: {x: number, y: number, xv: number, yv: number, dir: number, dirTime: number, points: points}[] = []
-        /*setTimeout(() => {
-            for (let i=0; i<6; i++){
-                blobs.push(
-                    {
-                        x: canvas.width * Math.random(),
-                        y: canvas.height * Math.random(),
-                        xv: 0,
-                        yv: 0,
-                        dir: 2*Math.PI*Math.random(),
-                        dirTime: 0,
-                        points: GetPoints(),
-                    }
-                )
-            }
-        }, 1000 * .5);*/
-
         function Distance(x1: number, y1: number, x2: number, y2: number){
             const x = x2 - x1, y = y2 - y1
             return Math.sqrt(x * x + y * y)
-        }
-
-        const radius = 100, maxVel = 300, blobAttract = 100
-        /*function GetPoints(blob: typeof blobs[0]){
-            function getPos(rotation: number){
-                const x = blob.x + radius * Math.cos(rotation), y = blob.y + radius * Math.sin(rotation)
-                return [x, y]
-            }
-
-            const points: {x: number, y: number}[] = []
-            for (let r=0; r<2*Math.PI; r+=.1){
-                const [x, y] = getPos(r)
-                points.push({x,y})
-            }
-
-            return points
-        }*/
-
-        function getPos(rotation: number, setRadius: number|null){
-            if (setRadius==null) {setRadius = radius}
-            const x = setRadius * Math.cos(rotation), y = setRadius * Math.sin(rotation)
-            return [x, y]
-        }
-        function GetPoints(){
-            const points: points = []
-            for (let r=0; r<2*Math.PI; r+=.1){
-                const [x, y] = getPos(r, null)
-                points.push({x: new Spring(x, 22, 1000, x),y: new Spring(y, 22, 1000, y),r})
-            }
-            return points
-        }
-        // THIS WAS A TEST, IT WAS RENDERING BLOBS MIGHT USE IT LATER \\
-        function RenderCanvas(DT: number){
-            if(ctx){
-                const lValue = 1 - Math.pow(.1, DT)
-                ctx.clearRect(0, 0, canvas.width, canvas.height)
-                const speed = Math.abs( (freqSum - 120) * 1 ) - 2.5
-                //console.log(speed)
-                blobs.forEach((blob, index) => {
-                    if (lastTime - blob.dirTime > 2 && freqSum > 0){
-                        const tx = canvas.width/2, ty = canvas.height/2
-                        const distance = Distance(tx, ty, blob.x, blob.y)
-                        let ydiff = (ty - blob.y), xdiff = (tx - blob.x)
-                        let angle = tx - blob.x == 0?2*Math.PI*Math.random() : Math.atan( ydiff / xdiff )
-                        if (xdiff < 0 && ydiff > 0) {angle += Math.PI}// else if (ydiff < 0) {angle += Math.PI*2}
-                        else if (xdiff < 0 && ydiff < 0) {angle -= Math.PI}
-                        blob.dir = angle//lerp(blob.dir, angle, lValue)//2*Math.PI*(angle)//Math.random()
-                        //console.log(180*angle/Math.PI)
-                        if (distance < 100) {
-                            blob.dir = 2*Math.PI*Math.random()
-                            blob.dirTime = lastTime
-                        }
-                    }
-                    blob.xv = Math.max(Math.min(blob.xv + speed * Math.cos(blob.dir), maxVel), -maxVel)
-                    blob.yv = Math.max(Math.min(blob.yv + speed * Math.sin(blob.dir), maxVel), -maxVel)
-                    blob.x = Math.max(Math.min(blob.x + blob.xv * lValue, canvas.width + radius), -radius)
-                    //blob.x = canvas.width/2 + 200 * Math.sin(lastTime*.5)
-                    //blob.y = canvas.height/2 + 100
-                    blob.y = Math.max(Math.min(blob.y + blob.yv * lValue, canvas.height + radius), -radius)
-                    
-                    blob.xv /= 1.1
-                    blob.yv /= 1.1
-
-                    function getPos2(rotation: number){
-                        let x = radius * Math.cos(rotation), y = radius * Math.sin(rotation)
-                        let closePoint: {x: number, y: number} =  {x: 0, y: 0}, currDist = Infinity
-                        blobs.forEach((newBlob, index2) => {
-                            const blobDist = Distance(blob.x, blob.y, newBlob.x, newBlob.y)
-                            if (index != index2 && blobDist < (radius + blobAttract) * 1.1){
-                                newBlob.points.forEach(point => {
-                                    const [px, py] = getPos(point.r, null)
-                                    const dist = Distance(blob.x + x, blob.y + y, newBlob.x + px, newBlob.y + py)
-                                    if (dist <= blobAttract && currDist > dist){
-                                        closePoint = {x: newBlob.x + px, y: newBlob.y + py}
-                                        currDist = dist
-                                    }
-                                })
-                            }
-                        })
-                        if (currDist != Infinity){
-                            const lerpValue = .7 * (1 - currDist / blobAttract)
-                            x = lerp(x + blob.x, closePoint.x, lerpValue) - blob.x, y = lerp(y + blob.y, closePoint.y, lerpValue) - blob.y
-                        }
-                        return [x, y]
-                    }
-                    const [x, y] = getPos2(0)
-                    ctx.lineWidth = 10
-                    ctx.fillStyle = "rgb(255,255,255)"
-                    ctx.beginPath()
-                    //ctx.moveTo(x, y)
-                    //console.log(bass)
-                    blob.points.forEach(point => {
-                        //const [px, py] = getPos(point.r, null)
-                        const [x, y] = getPos2(point.r)
-                        const [bx, by] = getPos(point.r, Math.random() * Math.min(Math.pow(1.1, freqSum-127), 100))
-                        point.x.target = x+bx//lerp(point.x.target, x, lValue)
-                        point.y.target = y+by//lerp(point.y.target, y, lValue)
-                        point.x.update(DT); point.y.update(DT);
-                        ctx.lineTo(blob.x + point.x.position, blob.y + point.y.position)
-                    })
-                    ctx.closePath()
-                    ctx.fill()
-                })
-            }
         }
 
         let lastAudioProgress = 0
@@ -538,52 +412,6 @@
                 lineIndex++
             }
             MusicLines = MusicLines
-            /*RenderCanvas(DT)
-
-            if (fullScreen){
-                const ptime = .5
-                const lerpValue = 1.1 - Math.pow(.01, DT)
-                particles.forEach((particle, index) => {
-                    const elapsed = time - particle.time
-                    const t = elapsed / ptime
-                    const mx = lerp(particle.sx, particle.ex, .5), my = lerp(particle.sy, particle.ey, .5) - particle.p
-
-                    particle.x = lerp(particle.x, bez(particle.sx, mx, particle.ex, t), lerpValue)
-                    particle.y = lerp(particle.y, bez(particle.sy, my, particle.ey, t), lerpValue)
-                    particle.t = t
-                    particle.rotation += particle.r * lerpValue
-
-                    if (t >= 1){
-                        particles.splice(index, 1)
-                    }
-                })
-
-                if (time - lastParticle > 1/2 && isPlaying){
-                    const particleAdd = sum / 40 - 3
-                    //console.log(particleAdd)
-                    for (let index = 0; index < particleAdd; index++) {
-                        let mx = window.innerWidth / 2, my = window.innerHeight / 2
-                        mx = mx + mx * (Math.random() * .2 * 2 - .2), my = my + my *  (Math.random() * .2 * 2 - .2)
-                        const px = window.innerWidth / 2 * (sum / 170), py = window.innerHeight / 2
-                        particles.push({
-                            x: mx,
-                            y: my,
-                            sx: mx,
-                            sy: my,
-                            ex: mx + Math.random() * px * 2 - px,
-                            ey: my + py / 2 + Math.random() * py / 2,
-                            rotation: Math.random() * 360,
-                            time,
-                            t: 0,
-                            p: sum*5,
-                            r: sum * .5 * (Math.random() >= .5?-1:1),
-                        })
-                    }
-                }
-                particles = particles
-            } else {
-                particles = []
-            }*/
         }
         
         window.requestAnimationFrame(doFrame)
@@ -731,15 +559,9 @@
         </button>
     </div>
     <div style="--y: {fullScreen==true?0:100}%" class="FullScreen flex flex-col justify-center items-center h-[100%] w-[100%] bg-b2 trans absolute top-[var(--y)] z-20">
-        <!-- {#each particles as particle}
-        <div style="--x: {particle.x}px; --y: {particle.y}px; --rotation: {particle.rotation}deg; --opacity: {bez2(0,100,100,0,particle.t)}%" class="absolute pointer-events-none bg-white rounded-full h-[10%] aspect-square opacity-[var(--opacity)] -translate-x-1/2 -translate-y-1/2 left-[var(--x)] top-[var(--y)] particle">
-            <div class="w-full h-full particleIcon"><Play size="100%" color="rgb(0,0,0)"></Play></div>
-        </div>
-        {/each} -->
-        <canvas bind:this={canvas} class="w-full h-full absolute pointer-events-none -z-10" width="{innerWidth}" height="{innerHeight}"/>
         <p class="text-6xl text-white pb-5">{songName}</p>
         <div class="w-[100%] h-[45%] flex justify-center items-center">
-            <img src="/image/{songid}" style="--size:{Math.max(Math.min(-25 + 30 * (freqSum / 70), 70), 0)}%" class="absolute h-[var(--size)] rounded-xl aspect-square bg-b1 text-white ml-5" alt="song">
+            <img src="/image/{songid}" style="--size:{Math.max(Math.min(30 + 2 * (freqSum / 70), 70), 0)}%" class="absolute h-[var(--size)] rounded-xl aspect-square bg-b1 text-white ml-5" alt="song">
             {#each MusicLines as Line}
                 <MusicLine LineMax={MusicLines.length} LineData={Line} enabled={fullScreen}></MusicLine>
             {/each}
