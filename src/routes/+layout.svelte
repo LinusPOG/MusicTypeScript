@@ -230,6 +230,11 @@
     let freqSum = 1
 
     onMount(() => {
+        if (!data.user && document.location.href.indexOf("/login") == -1){
+            document.location.href = "/login"
+            return
+        }
+
         const ctx = canvas.getContext("2d")
         // LOADS LAST STATE IF IT EXISTS, LOADS STUFF SUCH AS WHAT SONGS WERE PLAYING \\
         fetch("/state").then(async res => {
